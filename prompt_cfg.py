@@ -33,7 +33,7 @@ ARGUMENTS = {
 
 
 class Prompt(base_cli.BaseCLI):
-    def __init__(self, context, parser = None):
+    def __init__(self, context = base_cli.ContextConfig, parser = None):
         super().__init__(context)
         
         self.params = {
@@ -45,30 +45,29 @@ class Prompt(base_cli.BaseCLI):
             "ref_strength": None,
             "ref_mode": None
         }
-        self.__parser = parser if parser else ap.ArgumentParser()
+        self.parser = parser if parser else ap.ArgumentParser()
 
-        self.__parser.add_argument("--savep", action="store_true",
+        self.parser.add_argument("--savep", action="store_true",
                                    help = "保存当前的prompt")
-        self.__parser.add_argument("--loadp",
+        self.parser.add_argument("--loadp",
                                    help="从指定文件加载prompt")
-        self.__parser.add_argument("-lp", "--list_prompt", action="store_true",
+        self.parser.add_argument("-lp", "--list_prompt", action="store_true",
                                    help="返回所有可用设置的参数")
-        self.__parser.add_argument("-qp", "--query_prompt",
+        self.parser.add_argument("-qp", "--query_prompt",
                                    help="返回特定参数所设置的值")
-
-        self.__parser.add_argument("-m", "--model",
+        self.parser.add_argument("-m", "--model",
                                    help = "设置使用的文生图模型")
-        self.__parser.add_argument("-p", "--prompt",
+        self.parser.add_argument("-p", "--prompt",
                                    help = "设置使用的提示词")
-        self.__parser.add_argument("-n", "--negative",
+        self.parser.add_argument("-n", "--negative",
                                    help = "设置使用的反向提示词")
-        self.__parser.add_argument("-s", "--style",
+        self.parser.add_argument("-s", "--style",
                                    help = "设置图像的风格")
-        self.__parser.add_argument("-ri", "--ref_img",
+        self.parser.add_argument("-ri", "--ref_img",
                                    help = "设置参考图像的URL地址")
-        self.__parser.add_argument("-rs", "--ref_strength", type=float,
+        self.parser.add_argument("-rs", "--ref_strength", type=float,
                                    help = "设置参考图像的相似度(0~1)")
-        self.__parser.add_argument("-rm", "--ref_mode", type=float,
+        self.parser.add_argument("-rm", "--ref_mode",
                                    help = "设置基于参考图生成图像的模式")
         # 枚举类参数
         for arg in ["model", "style", "ref_mode"]:
@@ -79,7 +78,7 @@ class Prompt(base_cli.BaseCLI):
             setattr(self, arg, partial(self.set_value, arg))
 
     def save(self, _):
-        with open(self.context+'.i', 'w', encoding='utf-8') as fp:
+        with open(str(self.context)+'.i', 'w', encoding='utf-8') as fp:
             json.dump(self.params, fp)
 
     def load(self, load):
@@ -87,12 +86,12 @@ class Prompt(base_cli.BaseCLI):
             with open(load, "r") as fp:
                 self.params = json.load(fp)
         except FileNotFoundError as e:
-            print(f"无法打开文件 '{self.context}.prompt'")
+            print(f"无法打开文件 '{str(self.context)}.prompt'")
 
-    def list(self, _):
+    def list_prompt(self, _):
         pprint.pprint(ARGUMENTS)
 
-    def query(self, name):
+    def query_prompt(self, name):
         ret = self.params.get(name)
         if ret is None:
             print(f"无效的参数名称{name}")

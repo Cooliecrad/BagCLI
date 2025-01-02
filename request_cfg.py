@@ -10,23 +10,23 @@ class PromptRequest(base_cli.BaseCLI):
         self.__task_id = ""
         self.__urls = []
 
-        self.__parser = parser if parser else ap.ArgumentParser()
+        self.parser = parser if parser else ap.ArgumentParser()
 
-        self.__parser.add_argument("-r", "--request", action="store_true",
+        self.parser.add_argument("-r", "--request", action="store_true",
                                    help = "请求文生图，保存文生图的task_id")
 
-        self.__parser.add_argument("-loadi", "--load_id", action="store_true",
+        self.parser.add_argument("-loadi", "--load_id", action="store_true",
                                    help="从指定文件加载task_id")
-        self.__parser.add_argument("--taskid", action="store_true",
+        self.parser.add_argument("--taskid", action="store_true",
                                    help = "返回当前的task_id")
 
-        self.__parser.add_argument("-ret", "--response", action="store_true",
+        self.parser.add_argument("-ret", "--response", action="store_true",
                                    help = "获得task_id的结果，保存生成图像的URL")
 
-        self.__parser.add_argument("-loadu", "--load_urls", action="store_true",
+        self.parser.add_argument("-loadu", "--load_urls", action="store_true",
                                    help = "从指定文件加载URL列表")
     
-        self.__parser.add_argument("-dl", "--download_image", action="store_true",
+        self.parser.add_argument("-dl", "--download_image", action="store_true",
                                    help = "下载URL列表指向的图像")
 
     def get_apikey(self):
@@ -61,7 +61,7 @@ class PromptRequest(base_cli.BaseCLI):
         if prompt["ref_strength"] is not None:
             data_param["ref_strength"] = prompt["ref_strength"]
         if prompt["ref_mode"] is not None:
-            data_param["ref_img"] = prompt["ref_mode"]
+            data_param["ref_mode"] = prompt["ref_mode"]
 
         data = {
             "model": prompt["model"],
@@ -75,7 +75,7 @@ class PromptRequest(base_cli.BaseCLI):
             result = response.json()
             self.__task_id = result.get("output")['task_id']
 
-            filename = f"{self.context}.id"
+            filename = f"{str(self.context)}.id"
             with open(filename, "w", encoding='utf-8') as fp:
                 fp.write(self.__task_id)
             print(f"已保存任务ID到{filename}")
@@ -88,7 +88,7 @@ class PromptRequest(base_cli.BaseCLI):
         print(f"当前任务ID: {self.__task_id}")
 
     def load_id(self, _):
-        filename = f"{self.context}.id"
+        filename = f"{str(self.context)}.id"
         try:
             with open(filename, "r", encoding='utf-8') as fp:
                 self.__task_id = fp.read()
@@ -138,13 +138,13 @@ class PromptRequest(base_cli.BaseCLI):
             for x in urls:
                 print(f"\t{x}")
 
-            filename = f"{self.context}.result"
+            filename = f"{str(self.context)}.result"
             with open(filename, "w", encoding='utf-8') as fp:
                 fp.write(str(urls))
             print(f"已保存图片URL到{filename}")
 
     def load_urls(self, _):
-        filename = f"{self.context}.result"
+        filename = f"{str(self.context)}.result"
         try:
             with open(filename, "r", encoding='utf-8') as fp:
                 self.__urls = eval(fp.read())
@@ -156,7 +156,7 @@ class PromptRequest(base_cli.BaseCLI):
             response = requests.get(url)
             response.raise_for_status()  # Raise an error for bad responses (4xx and 5xx)
 
-            filename = f"{self.context}_{index}.jpg" 
+            filename = f"{str(self.context)}_{index}.jpg" 
             with open(filename, 'wb') as file:
                 file.write(response.content)
             print(f"成功下载图片，保存为{filename}")

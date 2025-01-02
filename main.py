@@ -1,53 +1,47 @@
-
 import argparse as ap
-import sys
-import os
 from prompt_cfg import Prompt
 from request_cfg import PromptRequest
 import base_cli
 
 
-class Manager(base_cli.BaseCLI):
+class Manager:
     def __init__(self, context="global"):
-        super().__init__(context)
+        self.parser = ap.ArgumentParser(exit_on_error=False)
+        sp = self.parser.add_subparsers(dest="subcommand", help="子命令")
 
-        self.context = context
-        self.__parser = ap.ArgumentParser(exit_on_error=False)
-        self.__parser.add_argument("-c", "--context", help="设置上下文")
+        ctx_parser = sp.add_parser("ctx", help="上下文管理")
+        pmt_parser = sp.add_parser("pmt", help="prompt设置")
+        req_parser = sp.add_parser("req", help="文生图请求管理")
 
-        sp = self.__parser.add_subparsers(title="pmt", description="prompt设置")
-        pmt = sp.add_parser("pmt", help="prompt设置")
-        req = sp.add_parser("req", help="文生图请求管理")
+        self.__ctx = base_cli.ContextConfig(context, ctx_parser)
+        self.__subp = {
+            "ctx": self.__ctx,
+            "pmt": Prompt(self.__ctx, pmt_parser),
+            "req": PromptRequest(self.__ctx, req_parser),
+        }
 
-        self.__pmt = Prompt(self.context, pmt)
-        self.__req = PromptRequest(self.context, req)
-        self.__subparsers: list[base_cli.BaseCLI] = [
-            self.__pmt, self.__req
-        ]
-
-    def set_context(self, context):
-        self.context = context
-        for p in self.__subparsers:
-            p.set_context(context)
+    @property
+    def context(self) -> str:
+        return str(self.__ctx)
 
     def parse(self, args):
-        args = self.__parser.parse_args(args)
+        args = self.parser.parse_args(args)
+        
+        if hasattr(args, "subcommand"):
+            subc = args.subcommand
+            self.__subp[subc].parse_args(args)
 
-        if args.context:
-            self.set_context(args.context)
-        if args.request:
-            self.__req.request_generate_image(self.__pmt.params)
-
-        for p in self.__subparsers:
-            p.parse_args(args)
+        if hasattr(args, "request") and args.request:
+            self.__subp["req"].request_generate_image(self.__subp["pmt"].params)
 
 
 if __name__ == "__main__":
     mng = Manager()
     while True:
         try:
-            cmd = input(f"({mng.context}) ").split()
-            mng.parse(cmd)
+            cmd = input(f"\n({mng.context}) ").split()
+            if len(cmd) > 0:
+                mng.parse(cmd)
         except SystemExit as ex:
             pass
         except KeyboardInterrupt as ex:
